@@ -1,0 +1,36 @@
+//  1. Monitor CPU Usage of the replicated VM
+Perf
+| where ObjectName == "Processor" and CounterName == "% Processor Time"
+| where InstanceName == "_Total"
+| summarize avg(CounterValue) by bin(TimeGenerated, 5m), Computer
+| order by TimeGenerated desc
+
+//------------------------------------------------------------
+
+//  2. List Azure Backup Job Status
+AzureBackupJob
+| where Operation == "Backup"
+| project TimeGenerated, BackupItemUniqueId, Status, Duration, ErrorCode
+| order by TimeGenerated desc
+
+//------------------------------------------------------------
+
+//  3. Get All Failed Backup Jobs
+AzureBackupJob
+| where Status == "Failed"
+| project TimeGenerated, BackupItemFriendlyName, Status, ErrorCode, ErrorMessage
+| order by TimeGenerated desc
+
+//------------------------------------------------------------
+
+//  4. ASR Replication Health Status
+AzureSiteRecoveryReplicationHealth
+| summarize count() by HealthStatus, ProtectedItemName, SourceSite, TargetLocation
+
+//------------------------------------------------------------
+
+//  5. Recent Test Failover Events
+AzureSiteRecoveryEvent
+| where EventType == "TestFailoverCompleted"
+| project TimeGenerated, ProtectedItemName, EventType, Description
+| order by TimeGenerated desc
